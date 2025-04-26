@@ -1,31 +1,47 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
 import './Home.css';
 
 const categories = [
-  { name: 'Study Partner', color: 'study' },
-  { name: 'Guide', color: 'guide' },
-  { name: 'Collaborator', color: 'collaborator' },
-  { name: 'Internship Partner', color: 'internship' },
-];
-
-const posts = [
-  {
-    id: 1,
-    type: 'Study Partner',
-    user: {
-      name: 'Alex Johnson',
-      college: 'MIT',
-      year: '3rd Year',
-      image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2.25&w=256&h=256&q=80',
-    },
-    content: 'Looking for a study partner for Advanced Algorithms course. Planning to prepare for coding interviews together.',
-    skills: ['Data Structures', 'Algorithms', 'Python'],
-  },
-  // Add more sample posts as needed
+  { name: 'study', color: 'study' },
+  { name: 'guide', color: 'guide' },
+  { name: 'collaborator', color: 'collaborator' },
+  { name: 'internship', color: 'internship' },
 ];
 
 function Home() {
+  const [posts, setPosts] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const userEmail = JSON.parse(localStorage.getItem('user'))?.email; // Get logged-in user's email
+
+  // Fetch posts from the backend
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/posts');
+        const data = await res.json();
+
+        if (res.ok) {
+          // Filter out posts created by the logged-in user
+          const filteredPosts = data.posts.filter(post => post.email !== userEmail);
+          setPosts(filteredPosts);
+        } else {
+          alert(data.message || 'Failed to fetch posts');
+        }
+      } catch (err) {
+        console.error('Error fetching posts:', err);
+        alert('Something went wrong');
+      }
+    };
+
+    fetchPosts();
+  }, [userEmail]);
+
+  // Filter posts based on search query
+  const filteredPosts = posts.filter(post =>
+    post.content.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="home-container">
       <div className="search-section">
@@ -35,6 +51,8 @@ function Home() {
             type="text"
             placeholder="Search posts..."
             className="search-input"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
@@ -45,24 +63,26 @@ function Home() {
             <div className="category-header">
               <h3 className="category-title">{category.name}</h3>
               <span className={`category-count ${category.color}`}>
-                {posts.filter(post => post.type === category.name).length} posts
+                {filteredPosts.filter(post => post.postType === category.name).length} posts
               </span>
             </div>
 
             <div className="post-list">
-              {posts
-                .filter(post => post.type === category.name)
+              {filteredPosts
+                .filter(post => post.postType === category.name)
                 .map(post => (
-                  <div key={post.id} className="post-card">
+                  <div key={post._id} className="post-card">
                     <div className="post-user">
                       <img
-                        src={post.user.image}
-                        alt={post.user.name}
+                        src={post.userImage || 'https://via.placeholder.com/150'}
+                        alt={post.userName || 'Unknown User'}
                         className="user-image"
                       />
                       <div className="user-info">
-                        <h4 className="user-name">{post.user.name}</h4>
-                        <p className="user-meta">{post.user.college} • {post.user.year}</p>
+                        <h4 className="user-name">{post.userName || "Unknown User"}</h4>
+                        <p className="user-meta">
+                          {post.college || "Unknown College"} • {post.year || "N/A"}
+                        </p>
                       </div>
                     </div>
                     <p className="post-content">{post.content}</p>

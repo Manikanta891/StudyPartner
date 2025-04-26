@@ -1,27 +1,42 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "./Discover.css";
 import { FaSearch } from "react-icons/fa";
 
-const students = [
-  {
-    name: "Sarah Chen",
-    university: "Stanford University",
-    department: "Computer Science",
-    year: "2nd Year",
-    skills: ["Machine Learning", "Python", "Data Science"],
-    image: "https://randomuser.me/api/portraits/women/44.jpg",
-  },
-  {
-    name: "Michael Park",
-    university: "UC Berkeley",
-    department: "Electrical Engineering",
-    year: "4th Year",
-    skills: ["Circuit Design", "Arduino", "IoT"],
-    image: "https://randomuser.me/api/portraits/men/76.jpg",
-  },
-];
-
 const Discover = () => {
+  const [users, setUsers] = useState([]); // State to store users
+  const [searchQuery, setSearchQuery] = useState(""); // State for search input
+  const loggedInUserEmail = JSON.parse(localStorage.getItem("user"))?.email; // Get logged-in user's email
+
+  // Fetch users from the backend
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/users?email=${loggedInUserEmail}`);
+        const data = await res.json();
+
+        if (res.ok) {
+          setUsers(data.users); // Assuming the backend returns { users: [...] }
+        } else {
+          alert(data.message || "Failed to fetch users");
+        }
+      } catch (err) {
+        console.error("Error fetching users:", err);
+        alert("Something went wrong");
+      }
+    };
+
+    fetchUsers();
+  }, [loggedInUserEmail]);
+
+  // Filter users based on the search query
+  const filteredUsers = users.filter(
+    (user) =>
+      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.knownSkills.some((skill) =>
+        skill.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+  );
+
   return (
     <div className="discover-container">
       <h2>Discover Students</h2>
@@ -33,21 +48,28 @@ const Discover = () => {
           type="text"
           className="search-box"
           placeholder="Search by name or skills..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
         />
       </div>
 
       <div className="card-container">
-        {students.map((student, idx) => (
+        {filteredUsers.map((user, idx) => (
           <div key={idx} className="student-card">
-            <img src={student.image} alt={student.name} className="avatar" />
+            <img
+              src={user.profilePhotoUrl || "https://via.placeholder.com/150"}
+              alt={user.name}
+              className="avatar"
+            />
             <div className="card-info">
-              <h3>{student.name}</h3>
-              <p>{student.university}</p>
+              <h3>{user.name}</h3>
+              <p>{user.college || "Unknown College"}</p>
               <p>
-                {student.department} • {student.year}
+                {user.branch || "Unknown Branch"} •{" "}
+                {user.year ? `${user.year} Year` : "N/A"}
               </p>
               <div className="skills">
-                {student.skills.map((skill, i) => (
+                {user.knownSkills.map((skill, i) => (
                   <span key={i}>{skill}</span>
                 ))}
               </div>

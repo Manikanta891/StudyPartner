@@ -3,11 +3,25 @@ import User from "../Models/User.js";
 
 const router = express.Router();
 
-// Fetch user details by email
-router.get("/:email", async (req, res) => {
-  const { email } = req.params;
+// Fetch all users except the logged-in user
+router.get("/", async (req, res) => {
+  const loggedInUserEmail = req.query.email; // Get the logged-in user's email from the query parameter
+
   try {
-    const user = await User.findOne({ email });
+    const users = await User.find(loggedInUserEmail ? { email: { $ne: loggedInUserEmail } } : {}); // Exclude the logged-in user
+    res.status(200).json({ users });
+  } catch (err) {
+    console.error("Error fetching users:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Fetch user by email
+router.get("/:email", async (req, res) => {
+  const { email } = req.params; // Extract email from the route parameter
+
+  try {
+    const user = await User.findOne({ email }); // Find the user by email
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
