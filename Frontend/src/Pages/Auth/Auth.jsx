@@ -46,7 +46,9 @@ const Auth = () => {
 
       const data = await res.json();
       if (res.ok) {
-        navigate("/home", { state: { user: data.user } }); // 👈 Pass user object
+        // Store user data in localStorage
+        localStorage.setItem("user", JSON.stringify(data.user)); // Save user object
+        navigate("/home", { state: { user: data.user } }); // Pass user object to the next page
       } else {
         alert(data.message || "Signin failed");
       }

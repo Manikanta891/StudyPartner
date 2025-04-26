@@ -45,9 +45,10 @@ router.post("/signin", async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
+    // Send user data (including name) in the response
     res.status(200).json({
       message: "Login successful",
-      user: { name: user.name, email: user.email },
+      user: { name: user.name, email: user.email }, // Include name here
     });
   } catch (err) {
     console.error(err);

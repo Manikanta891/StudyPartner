@@ -1,67 +1,174 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Camera, Edit2, Plus } from 'lucide-react';
 import './Profile.css';
 
-const initialProfile = {
-  name: "Alex Johnson",
-  email: "alex.johnson@university.edu",
-  college: "Stanford University",
-  branch: "Computer Science",
-  year: "3rd Year",
-  bio: "Passionate about software development and machine learning. Looking to collaborate on innovative projects and learn from peers.",
-  image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2.25&w=256&h=256&q=80",
-  knownSkills: [
-    { name: "Python", level: "Advanced" },
-    { name: "Machine Learning", level: "Intermediate" },
-    { name: "React", level: "Advanced" },
-    { name: "Node.js", level: "Intermediate" }
-  ],
-  learningSkills: ["Cloud Computing", "DevOps", "Mobile Development"]
-};
-
 function Profile() {
-  const [profile, setProfile] = useState(initialProfile);
+  const [profile, setProfile] = useState(null); // Initially null until data is fetched
   const [isEditing, setIsEditing] = useState(false);
   const [newSkill, setNewSkill] = useState('');
   const [newLearningSkill, setNewLearningSkill] = useState('');
 
+  // Fetch user details from the database
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (!user || !user.email) {
+          alert('User not logged in');
+          return;
+        }
+
+        const res = await fetch(`http://localhost:5000/api/users/${user.email}`);
+        const data = await res.json();
+
+        if (res.ok) {
+          setProfile(data.user);
+        } else {
+          alert(data.message || 'Failed to fetch profile');
+        }
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+        alert('Something went wrong');
+      }
+    };
+
+    fetchProfile();
+  }, []);
+
   const handleAddSkill = (e) => {
     if (e.key === 'Enter' && newSkill.trim()) {
-      setProfile(prev => ({
+      setProfile((prev) => ({
         ...prev,
-        knownSkills: [...prev.knownSkills, { name: newSkill.trim(), level: 'Beginner' }]
+        knownSkills: [...prev.knownSkills, newSkill.trim()],
       }));
       setNewSkill('');
     }
   };
 
+  
+
   const handleAddLearningSkill = (e) => {
     if (e.key === 'Enter' && newLearningSkill.trim()) {
-      setProfile(prev => ({
+      setProfile((prev) => ({
         ...prev,
-        learningSkills: [...prev.learningSkills, newLearningSkill.trim()]
+        wantToLearn: [...prev.wantToLearn, newLearningSkill.trim()],
       }));
       setNewLearningSkill('');
     }
   };
 
-  const handleUpdateProfile = () => {
-    console.log('Updating profile:', profile);
-    setIsEditing(false);
+  const handleUpdateProfile = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/users/update`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert('Profile updated successfully!');
+        setIsEditing(false);
+      } else {
+        alert(data.message || 'Failed to update profile');
+      }
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      alert('Something went wrong');
+    }
   };
+
+  const handleProfilePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) {
+      alert("Please select an image to upload");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("email", profile.email);
+
+    try {
+      const res = await fetch("http://localhost:5000/api/photo/upload-profile-photo", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Profile photo uploaded successfully!");
+        setProfile((prev) => ({
+          ...prev,
+          profilePhotoUrl: data.profilePhotoUrl,
+        }));
+      } else {
+        alert(data.message || "Failed to upload profile photo");
+      }
+    } catch (err) {
+      console.error("Error uploading profile photo:", err);
+      alert("Something went wrong");
+    }
+  };
+
+  const handleCoverPhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) {
+      alert("Please select an image to upload");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("image", file);
+    formData.append("email", profile.email);
+
+    try {
+      const res = await fetch("http://localhost:5000/api/photo/upload-cover-photo", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Cover photo uploaded successfully!");
+        setProfile((prev) => ({
+          ...prev,
+          coverPhotoUrl: data.coverPhotoUrl,
+        }));
+      } else {
+        alert(data.message || "Failed to upload cover photo");
+      }
+    } catch (err) {
+      console.error("Error uploading cover photo:", err);
+      alert("Something went wrong");
+    }
+  };
+
+  if (!profile) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="profile-container">
       <div className="card profile-header">
         <div className="cover-image">
-          <button className="camera-btn">
-            <Camera size={20} />
-          </button>
+          <img src={profile.coverPhotoUrl} alt="Cover" className="cover-photo" />
+          {isEditing && (
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleCoverPhotoUpload}
+              className="upload-input"
+            />
+          )}
         </div>
         <div className="profile-content">
           <div className="avatar-section">
             <div className="avatar-wrapper">
-              <img src={profile.image} alt={profile.name} className="avatar" />
+              <img src={profile.profilePhotoUrl} alt={profile.name} className="avatar" />
               <button className="small-camera-btn">
                 <Camera size={16} />
               </button>
@@ -83,25 +190,49 @@ function Profile() {
             <h3>About</h3>
             {isEditing ? (
               <textarea
-                value={profile.bio}
-                onChange={(e) => setProfile({ ...profile, bio: e.target.value })}
+                value={profile.about}
+                onChange={(e) => setProfile({ ...profile, about: e.target.value })}
                 rows={4}
               />
             ) : (
-              <p>{profile.bio}</p>
+              <p>{profile.about}</p>
             )}
             <div className="profile-grid">
               <div>
                 <h4>College</h4>
-                <p>{profile.college}</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={profile.college}
+                    onChange={(e) => setProfile({ ...profile, college: e.target.value })}
+                  />
+                ) : (
+                  <p>{profile.college}</p>
+                )}
               </div>
               <div>
                 <h4>Branch</h4>
-                <p>{profile.branch}</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={profile.branch}
+                    onChange={(e) => setProfile({ ...profile, branch: e.target.value })}
+                  />
+                ) : (
+                  <p>{profile.branch}</p>
+                )}
               </div>
               <div>
                 <h4>Year</h4>
-                <p>{profile.year}</p>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    value={profile.year}
+                    onChange={(e) => setProfile({ ...profile, year: e.target.value })}
+                  />
+                ) : (
+                  <p>{profile.year}</p>
+                )}
               </div>
             </div>
           </div>
@@ -116,9 +247,9 @@ function Profile() {
             <div>
               <h3>Known Skills</h3>
               <div className="skill-tags">
-                {profile.knownSkills.map(skill => (
-                  <span key={skill.name} className="skill known">
-                    {skill.name} <span className="skill-level">• {skill.level}</span>
+                {profile.knownSkills.map((skill, index) => (
+                  <span key={index} className="skill known">
+                    {skill}
                   </span>
                 ))}
                 {isEditing && (
@@ -139,8 +270,8 @@ function Profile() {
             <div>
               <h3>Want to Learn</h3>
               <div className="skill-tags">
-                {profile.learningSkills.map(skill => (
-                  <span key={skill} className="skill learning">
+                {profile.wantToLearn.map((skill, index) => (
+                  <span key={index} className="skill learning">
                     {skill}
                   </span>
                 ))}
@@ -164,13 +295,16 @@ function Profile() {
 
       {isEditing && (
         <div className="profile-actions">
-          <button onClick={() => setIsEditing(false)} className="cancel-btn">Cancel</button>
-          <button onClick={handleUpdateProfile} className="save-btn">Save Changes</button>
+          <button onClick={() => setIsEditing(false)} className="cancel-btn">
+            Cancel
+          </button>
+          <button onClick={handleUpdateProfile} className="save-btn">
+            Save Changes
+          </button>
         </div>
       )}
     </div>
   );
 }
-
 
 export default Profile;

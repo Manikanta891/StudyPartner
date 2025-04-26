@@ -28,9 +28,43 @@ function Post() {
     setSkills(skills.filter(skill => skill !== skillToRemove));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log({ postType, content, skills });
+
+    // Fetch user email from localStorage
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (!user || !user.email) {
+      alert("User not logged in");
+      return;
+    }
+
+    const postData = {
+      email: user.email,
+      postType,
+      content,
+      skills,
+    };
+
+    try {
+      const res = await fetch("http://localhost:5000/api/posts/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(postData),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        alert("Post created successfully!");
+        setPostType("");
+        setContent("");
+        setSkills([]);
+      } else {
+        alert(data.message || "Failed to create post");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Something went wrong");
+    }
   };
 
   return (

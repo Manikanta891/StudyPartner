@@ -1,4 +1,16 @@
+import React, { useEffect, useState } from "react";
+
 const Header = () => {
+  const [name, setName] = useState("Student");
+
+  useEffect(() => {
+    // Fetch user data from localStorage
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user && user.name) {
+      setName(user.name);
+    }
+  }, []);
+
   return (
     <div
       style={{
@@ -20,7 +32,7 @@ const Header = () => {
         zIndex: 1001,
       }}
     >
-      <div>Welcome, Student!</div>
+      <div>Welcome, {name}!</div>
       <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
         <img
           src="https://img.icons8.com/ios-glyphs/30/000000/appointment-reminders--v1.png"
