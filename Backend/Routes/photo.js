@@ -18,12 +18,10 @@ router.post("/upload-profile-photo", upload.single("image"), async (req, res) =>
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    // Upload image to Cloudinary
     const result = await cloudinary.uploader.upload(req.file.path, {
       folder: "profile_photos",
     });
 
-    // Update user profile with image URL and public ID
     const user = await User.findOneAndUpdate(
       { email },
       {
@@ -56,12 +54,10 @@ router.post("/upload-cover-photo", upload.single("image"), async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    // Upload image to Cloudinary
     const result = await cloudinary.uploader.upload(req.file.path, {
       folder: "cover_photos",
     });
 
-    // Update user profile with image URL and public ID
     const user = await User.findOneAndUpdate(
       { email },
       {

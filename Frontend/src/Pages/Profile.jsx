@@ -169,9 +169,14 @@ function Profile() {
           <div className="avatar-section">
             <div className="avatar-wrapper">
               <img src={profile.profilePhotoUrl} alt={profile.name} className="avatar" />
-              <button className="small-camera-btn">
-                <Camera size={16} />
-              </button>
+              {isEditing && (
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePhotoUpload}
+                  className="upload-input"
+                />
+              )}
             </div>
             <div className="profile-info">
               <div className="profile-top-row">
