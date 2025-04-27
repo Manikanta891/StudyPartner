@@ -6,6 +6,7 @@ import authRoutes from "./Routes/Auth.js";
 import postRoutes from "./Routes/Post.js"; // Import Post routes
 import userRoutes from "./Routes/User.js"; // Import User routes
 import photoRoutes from "./Routes/photo.js"; // Import photo routes
+import connectionRoutes from "./Routes/Connection.js"; // Import Connection routes
 import { checkCloudinaryConnection } from "./Config/cloudinary.js"; // Import Cloudinary check function
 
 dotenv.config();
@@ -20,6 +21,7 @@ app.use("/api/auth", authRoutes); // Auth routes
 app.use("/api/posts", postRoutes); // Post routes
 app.use("/api/users", userRoutes); // User routes
 app.use("/api/photo", photoRoutes); // Register photo routes
+app.use("/api/connections", connectionRoutes); // Register connection routes
 
 // Endpoint to check Cloudinary connection
 app.get("/api/cloudinary/check", async (req, res) => {

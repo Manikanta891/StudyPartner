@@ -7,6 +7,7 @@ import Discover from "./Pages/Discover";
 import Chat from "./Pages/Chat";
 import Profile from "./Pages/Profile";
 import Post from "./Pages/Post";
+import UserProfile from "./Pages/UserProfile"; // Import UserProfile
 
 function App() {
   return (
@@ -22,6 +23,7 @@ function App() {
           <Route path="/chat" element={<Chat />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/post" element={<Post />} />
+          <Route path="/user/:email" element={<UserProfile />} /> {/* Add this route */}
         </Route>
       </Routes>
     </Router>

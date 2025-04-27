@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom'; // Import Link for navigation
 import { Search } from 'lucide-react';
 import './Home.css';
 
@@ -11,6 +12,7 @@ const categories = [
 
 function Home() {
   const [posts, setPosts] = useState([]);
+  const [connections, setConnections] = useState([]); // State to store existing connections
   const [searchQuery, setSearchQuery] = useState('');
   const userEmail = JSON.parse(localStorage.getItem('user'))?.email; // Get logged-in user's email
 
@@ -36,6 +38,72 @@ function Home() {
 
     fetchPosts();
   }, [userEmail]);
+
+  // Fetch existing connections
+  useEffect(() => {
+    const fetchConnections = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/connections/${userEmail}`);
+        const data = await res.json();
+
+        if (res.ok) {
+          setConnections(data.connections); // Store existing connections
+        } else {
+          alert(data.message || 'Failed to fetch connections');
+        }
+      } catch (err) {
+        console.error('Error fetching connections:', err);
+        alert('Something went wrong');
+      }
+    };
+
+    fetchConnections();
+  }, [userEmail]);
+
+  // Check connection status
+  const getConnectionStatus = (postEmail) => {
+    const connection = connections.find(
+      (conn) =>
+        (conn.email_user1 === userEmail && conn.email_user2 === postEmail) ||
+        (conn.email_user1 === postEmail && conn.email_user2 === userEmail)
+    );
+
+    if (!connection) return 'none'; // No connection exists
+    if (connection.status === 'pending') return 'sent'; // Connection request sent
+    if (connection.status === 'connected') return 'connected'; // Connection accepted
+    return 'none';
+  };
+
+  // Handle Connect Button Click
+  const handleConnect = async (postEmail) => {
+    try {
+      const res = await fetch('http://localhost:5000/api/connections/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email_user1: userEmail, // Logged-in user's email
+          email_user2: postEmail, // Post owner's email
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert('Connection request sent successfully!');
+        setConnections((prev) => [
+          ...prev,
+          { email_user1: userEmail, email_user2: postEmail, status: 'pending' },
+        ]); // Update connections state
+      } else {
+        alert(data.message || 'Failed to send connection request');
+      }
+    } catch (err) {
+      console.error('Error sending connection request:', err);
+      alert('Something went wrong');
+    }
+  };
 
   // Filter posts based on search query
   const filteredPosts = posts.filter(post =>
@@ -71,7 +139,11 @@ function Home() {
               {filteredPosts
                 .filter(post => post.postType === category.name)
                 .map(post => (
-                  <div key={post._id} className="post-card">
+                  <Link
+                    to={`/user/${post.email}`} // Navigate to UserProfile.jsx with the user's email
+                    key={post._id}
+                    className="post-card"
+                  >
                     <div className="post-user">
                       <img
                         src={post.userImage || 'https://via.placeholder.com/150'}
@@ -93,10 +165,23 @@ function Home() {
                         </span>
                       ))}
                     </div>
-                    <button className="connect-button">
-                      Connect
-                    </button>
-                  </div>
+                    {getConnectionStatus(post.email) === 'none' && (
+                      <button
+                        className="connect-button"
+                        onClick={(e) => {
+                          e.preventDefault(); // Prevent navigation when clicking "Connect"
+                          handleConnect(post.email);
+                        }}
+                      >
+                        Connect
+                      </button>
+                    )}
+                    {getConnectionStatus(post.email) === 'sent' && (
+                      <button className="connect-button" disabled>
+                        Sent
+                      </button>
+                    )}
+                  </Link>
                 ))}
             </div>
           </section>
