@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import "./Chat.css";
 
 function Chat() {
@@ -7,6 +8,7 @@ function Chat() {
 
   const [friends, setFriends] = useState([]); // State for friends
   const loggedInUserEmail = JSON.parse(localStorage.getItem("user"))?.email; // Get logged-in user's email
+  const navigate = useNavigate();
 
   // Fetch connection requests from the backend
   useEffect(() => {
@@ -153,7 +155,11 @@ function Chat() {
           <h2>Connection Requests</h2>
           {connectionRequests.length > 0 ? (
             connectionRequests.map((request) => (
-              <div key={request._id} className="request-item">
+              <div
+                key={request._id}
+                className="request-item"
+                onClick={() => navigate(`/user/${request.email_user1.email}`)} // Navigate to the user's profile
+              >
                 <img
                   src={request.email_user1.profilePhotoUrl || "https://via.placeholder.com/150"}
                   alt={request.email_user1.name || "Unknown User"}
@@ -166,13 +172,19 @@ function Chat() {
                 <div>
                   <button
                     className="accept-btn"
-                    onClick={() => handleAccept(request.email_user1.email)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent navigation when clicking "Accept"
+                      handleAccept(request.email_user1.email);
+                    }}
                   >
                     Accept
                   </button>
                   <button
                     className="decline-btn"
-                    onClick={() => handleReject(request.email_user1.email)}
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent navigation when clicking "Decline"
+                      handleReject(request.email_user1.email);
+                    }}
                   >
                     Decline
                   </button>
@@ -191,7 +203,11 @@ function Chat() {
           <h2>Your Friends</h2>
           {friends.length > 0 ? (
             friends.map((friend, index) => (
-              <div key={index} className="friend-item">
+              <div
+                key={index}
+                className="friend-item"
+                onClick={() => navigate(`/user/${friend.email}`)} // Navigate to the friend's profile
+              >
                 <img
                   src={friend.profilePhotoUrl || "https://via.placeholder.com/150"}
                   alt={friend.name || "Unknown User"}
