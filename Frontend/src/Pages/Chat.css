@@ -1,328 +1,93 @@
-/* Chat container layout */
+/* Chat container */
 .chat-container {
-  display: flex;
-  height: 100vh;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
   font-family: Arial, sans-serif;
-  background-color: #f7f8fa;
 }
 
-/* Contacts panel */
-.contacts-panel {
-  width: 300px;
-  border-right: 1px solid #ddd;
+/* Section tabs */
+.section-tabs {
   display: flex;
-  flex-direction: column;
+  justify-content: space-around;
+  margin-bottom: 20px;
+}
+
+.tab-btn {
+  padding: 10px 20px;
+  border: none;
+  background-color: #f0f0f0;
+  cursor: pointer;
+  font-size: 16px;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.tab-btn.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.tab-btn:hover {
+  background-color: #e0e0e0;
+}
+
+/* Section content */
+.friends-section,
+.requests-section,
+.chat-section {
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
   background-color: #fff;
 }
 
-/* Search box */
-.search-box {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  border-bottom: 1px solid #eee;
-}
-
-.search-icon {
-  margin-right: 8px;
-  color: #888;
-}
-
-.search-input {
-  width: 100%;
-  padding: 8px;
-  border: none;
-  outline: none;
-  font-size: 14px;
-}
-
-/* Contacts list */
-.contacts-list {
-  flex: 1;
-  overflow-y: auto;
-}
-
+.friend-item,
+.request-item,
 .contact-item {
   display: flex;
   align-items: center;
-  padding: 10px;
-  border-bottom: 1px solid #f0f0f0;
-  background: none;
-  width: 100%;
-  border: none;
-  cursor: pointer;
-  text-align: left;
-}
-
-.contact-item:hover {
-  background-color: #f5f5f5;
-}
-
-.contact-item.active {
-  background-color: #e6f0ff;
-}
-
-.avatar-wrapper {
-  position: relative;
-  margin-right: 10px;
+  margin-bottom: 15px;
 }
 
 .avatar {
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
+  margin-right: 15px;
+}
+
+.contact-item .avatar-wrapper {
+  position: relative;
 }
 
 .online-indicator {
   position: absolute;
-  bottom: 0;
-  right: 0;
-  background-color: #0f0;
-  border: 2px solid white;
+  bottom: 5px;
+  right: 5px;
   width: 10px;
   height: 10px;
+  background-color: green;
   border-radius: 50%;
+  border: 2px solid white;
 }
 
-.contact-info {
-  flex: 1;
+.accept-btn,
+.decline-btn {
+  padding: 5px 10px;
+  margin: 0 5px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
 }
 
-.name-row {
-  display: flex;
-  justify-content: space-between;
-  font-weight: bold;
-  font-size: 14px;
-}
-
-.contact-message,
-.typing-status {
-  font-size: 13px;
-  color: #666;
-  margin-top: 2px;
-}
-
-.typing-status {
-  font-style: italic;
-}
-
-.unread-badge {
-  background-color: #ff4d4f;
+.accept-btn {
+  background-color: #28a745;
   color: white;
-  padding: 2px 6px;
-  border-radius: 12px;
-  font-size: 12px;
-  margin-left: 8px;
 }
 
-/* Chat panel */
-.chat-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  background-color: #edf1f7;
-}
-
-/* Chat header */
-.chat-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 15px;
-  background-color: #fff;
-  border-bottom: 1px solid #ddd;
-}
-
-.header-info {
-  display: flex;
-  align-items: center;
-}
-
-.avatar-small {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  margin-right: 10px;
-}
-
-.status {
-  font-size: 13px;
-  color: #999;
-}
-
-.more-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-/* Chat body */
-.chat-body {
-  flex: 1;
-  padding: 15px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-}
-
-.message-row {
-  display: flex;
-  margin-bottom: 12px;
-}
-
-.message-row.sent {
-  justify-content: flex-end;
-}
-
-.message-row.received {
-  justify-content: flex-start;
-}
-
-.message-bubble {
-  position: relative;
-  max-width: 60%;
-  padding: 10px;
-  border-radius: 8px;
-  background-color: #fff;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-
-.message-row.sent .message-bubble {
-  background-color: #dcf8c6;
-}
-
-.message-content p {
-  margin: 0;
-  font-size: 14px;
-}
-
-.message-meta {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 5px;
-  font-size: 11px;
-  color: #999;
-}
-
-.icon {
-  width: 16px;
-  height: 16px;
-  vertical-align: middle;
-}
-
-.icon.read {
-  color: #4fc3f7;
-}
-
-/* Reply feature */
-.reply-box {
-  border-left: 2px solid #ccc;
-  padding-left: 6px;
-  margin-bottom: 6px;
-  font-size: 12px;
-  color: #666;
-}
-
-.reply-btn {
-  position: absolute;
-  right: -26px;
-  top: 8px;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-.reply-icon {
-  width: 20px;
-  height: 20px;
-  fill: #999;
-}
-
-/* Reply preview box above input */
-.reply-preview {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #e1f5fe;
-  padding: 8px 12px;
-  border-left: 4px solid #03a9f4;
-}
-
-.reply-info {
-  display: flex;
-  align-items: center;
-}
-
-.reply-indicator {
-  width: 6px;
-  height: 100%;
-  background-color: #03a9f4;
-  margin-right: 10px;
-}
-
-.replying-label {
-  font-size: 12px;
-  font-weight: bold;
-  margin: 0;
-}
-
-.replying-text {
-  font-size: 13px;
-  margin: 0;
-}
-
-.cancel-reply {
-  background: none;
-  font-size: 18px;
-  border: none;
-  cursor: pointer;
-}
-
-/* Input form */
-.message-input-form {
-  display: flex;
-  align-items: center;
-  padding: 10px 15px;
-  background-color: #fff;
-  border-top: 1px solid #ddd;
-}
-
-.icon-btn {
-  background: none;
-  border: none;
-  margin-right: 10px;
-  cursor: pointer;
-}
-
-.message-input {
-  flex: 1;
-  padding: 8px 10px;
-  font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 20px;
-  outline: none;
-}
-
-.send-btn {
-  background-color: #007bff;
-  border: none;
+.decline-btn {
+  background-color: #dc3545;
   color: white;
-  border-radius: 50%;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 10px;
-  cursor: pointer;
-}
-
-/* Empty chat view */
-.chat-empty {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #888;
-  font-size: 18px;
 }

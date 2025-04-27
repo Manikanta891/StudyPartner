@@ -11,62 +11,62 @@ const Discover = () => {
 
   // Fetch users from the backend
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchConnectionsAndUsers = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/users?email=${loggedInUserEmail}`);
-        const data = await res.json();
+        // Fetch connections
+        const connectionsRes = await fetch(`http://localhost:5000/api/connections/${loggedInUserEmail}`);
+        const connectionsData = await connectionsRes.json();
 
-        if (res.ok) {
-          setUsers(data.users); // Assuming the backend returns { users: [...] }
+        if (connectionsRes.ok) {
+          setConnections(connectionsData.connections); // Store connections
         } else {
-          alert(data.message || "Failed to fetch users");
+          alert(connectionsData.message || "Failed to fetch connections");
+        }
+
+        // Fetch users
+        const usersRes = await fetch(`http://localhost:5000/api/users?email=${loggedInUserEmail}`);
+        const usersData = await usersRes.json();
+
+        if (usersRes.ok) {
+          setUsers(usersData.users); // Store users
+        } else {
+          alert(usersData.message || "Failed to fetch users");
         }
       } catch (err) {
-        console.error("Error fetching users:", err);
+        console.error("Error fetching connections or users:", err);
         alert("Something went wrong");
       }
     };
 
-    fetchUsers();
-  }, [loggedInUserEmail]);
-
-  // Fetch existing connections
-  useEffect(() => {
-    const fetchConnections = async () => {
-      try {
-        const res = await fetch(`http://localhost:5000/api/connections/${loggedInUserEmail}`);
-        const data = await res.json();
-
-        if (res.ok) {
-          setConnections(data.connections); // Store existing connections
-        } else {
-          alert(data.message || "Failed to fetch connections");
-        }
-      } catch (err) {
-        console.error("Error fetching connections:", err);
-        alert("Something went wrong");
-      }
-    };
-
-    fetchConnections();
-  }, [loggedInUserEmail]);
+    fetchConnectionsAndUsers();
+  }, [loggedInUserEmail]); // Re-fetch connections and users when the logged-in user's email changes
 
   // Check connection status
   const getConnectionStatus = (userEmail) => {
     const connection = connections.find(
       (conn) =>
-        (conn.email_user1 === loggedInUserEmail && conn.email_user2 === userEmail) ||
-        (conn.email_user1 === userEmail && conn.email_user2 === loggedInUserEmail)
+        (conn.email_user1.email === loggedInUserEmail && conn.email_user2.email === userEmail) ||
+        (conn.email_user1.email === userEmail && conn.email_user2.email === loggedInUserEmail)
     );
 
     if (!connection) return "none"; // No connection exists
-    if (connection.status === "pending") return "sent"; // Connection request sent
+    if (connection.status === "pending") {
+      if (connection.email_user1.email === loggedInUserEmail) return "sent"; // Connection request sent by logged-in user
+      if (connection.email_user2.email === loggedInUserEmail) return "received"; // Connection request received by logged-in user
+    }
     if (connection.status === "connected") return "connected"; // Connection accepted
     return "none";
   };
 
   // Handle Connect Button Click
   const handleConnect = async (userEmail) => {
+    const loggedInUserEmail = JSON.parse(localStorage.getItem("user"))?.email; // Ensure this is defined
+
+    if (!loggedInUserEmail) {
+      alert("User not logged in");
+      return;
+    }
+
     try {
       const res = await fetch("http://localhost:5000/api/connections/request", {
         method: "POST",
@@ -83,10 +83,16 @@ const Discover = () => {
 
       if (res.ok) {
         alert("Connection request sent successfully!");
-        setConnections((prev) => [
-          ...prev,
-          { email_user1: loggedInUserEmail, email_user2: userEmail, status: "pending" },
-        ]); // Update connections state
+
+        // Update the connections state immediately
+        setConnections((prevConnections) => [
+          ...prevConnections,
+          {
+            email_user1: { email: loggedInUserEmail }, // Match the structure of existing connections
+            email_user2: { email: userEmail },
+            status: "pending",
+          },
+        ]);
       } else {
         alert(data.message || "Failed to send connection request");
       }
@@ -155,7 +161,16 @@ const Discover = () => {
                     Sent
                   </button>
                 )}
-                {/* Remove button if connection is accepted */}
+                {getConnectionStatus(user.email) === "received" && (
+                  <button className="connect-btn" disabled>
+                    Received
+                  </button>
+                )}
+                {getConnectionStatus(user.email) === "connected" && (
+                  <button className="connect-btn" disabled>
+                    Connected
+                  </button>
+                )}
               </div>
             </div>
           </div>

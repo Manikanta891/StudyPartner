@@ -1,259 +1,213 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Search, Send, Check, CheckCheck, Clock, Smile, Paperclip, MoreVertical } from 'lucide-react';
-import './Chat.css';
-
-const currentUserId = 1;
-
-const contacts = [
-  {
-    id: 2,
-    name: "Sarah Chen",
-    image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    lastMessage: "Looking forward to our study session!",
-    lastMessageTime: "10:30 AM",
-    unreadCount: 2,
-    online: true,
-    typing: true
-  },
-  {
-    id: 3,
-    name: "Michael Park",
-    image: "https://images.unsplash.com/photo-1519244703995-f4e0f30006d5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    lastMessage: "Thanks for the help with the project",
-    lastMessageTime: "Yesterday",
-    online: false
-  },
-  {
-    id: 4,
-    name: "Emily Rodriguez",
-    image: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80",
-    lastMessage: "Can we review the presentation tomorrow?",
-    lastMessageTime: "2 days ago",
-    online: true
-  }
-];
-
-const initialMessages = [
-  {
-    id: 1,
-    senderId: 2,
-    text: "Hi! I saw you're also studying algorithms",
-    timestamp: "10:00 AM",
-    status: 'read'
-  },
-  {
-    id: 2,
-    senderId: 1,
-    text: "Yes! I'm preparing for technical interviews",
-    timestamp: "10:15 AM",
-    status: 'read'
-  },
-  {
-    id: 3,
-    senderId: 2,
-    text: "Looking forward to our study session!",
-    timestamp: "10:30 AM",
-    status: 'delivered'
-  }
-];
+import React, { useState, useEffect } from "react";
+import "./Chat.css";
 
 function Chat() {
-  const [selectedContact, setSelectedContact] = useState(contacts[0]);
-  const [messages, setMessages] = useState(initialMessages);
-  const [newMessage, setNewMessage] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [replyingTo, setReplyingTo] = useState(null);
-  const messagesEndRef = useRef(null);
-  const [isEmojiPickerOpen, setIsEmojiPickerOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState("requests"); // Default to "Connection Requests"
+  const [connectionRequests, setConnectionRequests] = useState([]); // State for connection requests
 
-  const filteredContacts = contacts.filter(contact =>
-    contact.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const [friends, setFriends] = useState([]); // State for friends
+  const loggedInUserEmail = JSON.parse(localStorage.getItem("user"))?.email; // Get logged-in user's email
 
+  // Fetch connection requests from the backend
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    const fetchConnectionRequests = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/connections/requests/${loggedInUserEmail}`);
+        const data = await res.json();
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const handleSendMessage = (e) => {
-    e.preventDefault();
-    if (!newMessage.trim()) return;
-
-    const newMsg = {
-      id: messages.length + 1,
-      senderId: currentUserId,
-      text: newMessage,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      status: 'sending',
-      ...(replyingTo && { isReply: { messageId: replyingTo.id, text: replyingTo.text } })
+        if (res.ok) {
+          console.log("Fetched connection requests:", data.requests); // Debugging log
+          setConnectionRequests(data.requests); // Store pending connection requests
+        } else {
+          alert(data.message || "Failed to fetch connection requests");
+        }
+      } catch (err) {
+        console.error("Error fetching connection requests:", err);
+        alert("Something went wrong");
+      }
     };
 
-    setMessages([...messages, newMsg]);
-    setNewMessage('');
-    setReplyingTo(null);
+    fetchConnectionRequests();
+  }, [loggedInUserEmail]);
 
-    setTimeout(() => {
-      setMessages(prev =>
-        prev.map(msg =>
-          msg.id === newMsg.id ? { ...msg, status: 'sent' } : msg
-        )
-      );
-    }, 1000);
+  // Fetch friends from the backend
+  useEffect(() => {
+    const fetchFriends = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/connections/${loggedInUserEmail}`);
+        const data = await res.json();
 
-    setTimeout(() => {
-      setMessages(prev =>
-        prev.map(msg =>
-          msg.id === newMsg.id ? { ...msg, status: 'delivered' } : msg
-        )
-      );
-    }, 2000);
+        if (res.ok) {
+          // Filter connections where the status is "connected"
+          const connectedFriends = data.connections
+            .filter((conn) => conn.status === "connected")
+            .map((conn) => {
+              // Determine the other user in the connection
+              return conn.email_user1.email === loggedInUserEmail
+                ? conn.email_user2 // If logged-in user is email_user1, return email_user2
+                : conn.email_user1; // Otherwise, return email_user1
+            });
 
-    setTimeout(() => {
-      setMessages(prev =>
-        prev.map(msg =>
-          msg.id === newMsg.id ? { ...msg, status: 'read' } : msg
-        )
-      );
-    }, 3000);
+          setFriends(connectedFriends); // Update the friends state
+        } else {
+          alert(data.message || "Failed to fetch friends");
+        }
+      } catch (err) {
+        console.error("Error fetching friends:", err);
+        alert("Something went wrong");
+      }
+    };
+
+    fetchFriends();
+  }, [loggedInUserEmail, connectionRequests]); // Re-fetch friends when connectionRequests change
+
+  // Handle Accept Request
+  const handleAccept = async (email_user1) => {
+    try {
+      const res = await fetch("http://localhost:5000/api/connections/accept", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email_user1, // Sender's email
+          email_user2: loggedInUserEmail, // Logged-in user's email
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Connection request accepted!");
+        // Remove the accepted request from the state
+        setConnectionRequests((prev) =>
+          prev.filter((request) => request.email_user1.email !== email_user1)
+        );
+      } else {
+        alert(data.message || "Failed to accept connection request");
+      }
+    } catch (err) {
+      console.error("Error accepting connection request:", err);
+      alert("Something went wrong");
+    }
   };
 
-  const getMessageStatus = (status) => {
-    switch (status) {
-      case 'sending': return <Clock className="icon" />;
-      case 'sent': return <Check className="icon" />;
-      case 'delivered': return <CheckCheck className="icon" />;
-      case 'read': return <CheckCheck className="icon read" />;
-      default: return null;
+  // Handle Reject Request
+  const handleReject = async (email_user1) => {
+    try {
+      const res = await fetch("http://localhost:5000/api/connections/reject", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email_user1, // Sender's email
+          email_user2: loggedInUserEmail, // Logged-in user's email
+        }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Connection request rejected!");
+        // Remove the rejected request from the state
+        setConnectionRequests((prev) =>
+          prev.filter((request) => request.email_user1 !== email_user1)
+        );
+      } else {
+        alert(data.message || "Failed to reject connection request");
+      }
+    } catch (err) {
+      console.error("Error rejecting connection request:", err);
+      alert("Something went wrong");
     }
   };
 
   return (
     <div className="chat-container">
-      <div className="contacts-panel">
-        <div className="search-box">
-          <Search className="search-icon" />
-          <input
-            type="text"
-            placeholder="Search contacts..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="search-input"
-          />
-        </div>
-        <div className="contacts-list">
-          {filteredContacts.map(contact => (
-            <button
-              key={contact.id}
-              onClick={() => setSelectedContact(contact)}
-              className={`contact-item ${selectedContact?.id === contact.id ? 'active' : ''}`}
-            >
-              <div className="avatar-wrapper">
-                <img src={contact.image} alt={contact.name} className="avatar" />
-                {contact.online && <span className="online-indicator" />}
-              </div>
-              <div className="contact-info">
-                <div className="name-row">
-                  <span className="contact-name">{contact.name}</span>
-                  <span className="contact-time">{contact.lastMessageTime}</span>
-                </div>
-                {contact.typing ? (
-                  <p className="typing-status">typing...</p>
-                ) : (
-                  <p className="contact-message">{contact.lastMessage}</p>
-                )}
-              </div>
-              {contact.unreadCount && (
-                <span className="unread-badge">{contact.unreadCount}</span>
-              )}
-            </button>
-          ))}
-        </div>
+      {/* Section Tabs */}
+      <div className="section-tabs">
+        <button
+          className={`tab-btn ${activeSection === "friends" ? "active" : ""}`}
+          onClick={() => setActiveSection("friends")}
+        >
+          Friends
+        </button>
+        <button
+          className={`tab-btn ${activeSection === "requests" ? "active" : ""}`}
+          onClick={() => setActiveSection("requests")}
+        >
+          Connection Requests
+        </button>
+        <button
+          className={`tab-btn ${activeSection === "chat" ? "active" : ""}`}
+          onClick={() => setActiveSection("chat")}
+        >
+          Chats
+        </button>
       </div>
 
-      {selectedContact ? (
-        <div className="chat-panel">
-          <div className="chat-header">
-            <div className="header-info">
-              <img src={selectedContact.image} alt={selectedContact.name} className="avatar-small" />
-              <div>
-                <h3>{selectedContact.name}</h3>
-                <p className="status">{selectedContact.online ? 'Online' : 'Offline'}</p>
-              </div>
-            </div>
-            <button className="more-btn"><MoreVertical /></button>
-          </div>
-
-          <div className="chat-body">
-            {messages.map(message => (
-              <div key={message.id} className={`message-row ${message.senderId === currentUserId ? 'sent' : 'received'}`}>
-                <div className="message-bubble">
-                  {message.isReply && (
-                    <div className="reply-box">
-                      <p className="reply-label">Replying to:</p>
-                      <p className="reply-text">{message.isReply.text}</p>
-                    </div>
-                  )}
-                  <div className="message-content">
-                    <p>{message.text}</p>
-                    <div className="message-meta">
-                      <span className="message-time">{message.timestamp}</span>
-                      {message.senderId === currentUserId && <span>{getMessageStatus(message.status)}</span>}
-                    </div>
-                  </div>
+      {/* Section Content */}
+      {activeSection === "requests" && (
+        <div className="requests-section">
+          <h2>Connection Requests</h2>
+          {connectionRequests.length > 0 ? (
+            connectionRequests.map((request) => (
+              <div key={request._id} className="request-item">
+                <img
+                  src={request.email_user1.profilePhotoUrl || "https://via.placeholder.com/150"}
+                  alt={request.email_user1.name || "Unknown User"}
+                  className="avatar"
+                />
+                <div>
+                  <h3>{request.email_user1.name || request.email_user1.email}</h3>
+                  <p>Sent you a connection request</p>
+                </div>
+                <div>
                   <button
-                    onClick={() => setReplyingTo(message)}
-                    className="reply-btn"
+                    className="accept-btn"
+                    onClick={() => handleAccept(request.email_user1.email)}
                   >
-                    <svg className="reply-icon" viewBox="0 0 24 24">
-                      <path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-                    </svg>
+                    Accept
+                  </button>
+                  <button
+                    className="decline-btn"
+                    onClick={() => handleReject(request.email_user1.email)}
+                  >
+                    Decline
                   </button>
                 </div>
               </div>
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {replyingTo && (
-            <div className="reply-preview">
-              <div className="reply-info">
-                <div className="reply-indicator" />
-                <div>
-                  <p className="replying-label">Replying to message</p>
-                  <p className="replying-text">{replyingTo.text}</p>
-                </div>
-              </div>
-              <button onClick={() => setReplyingTo(null)} className="cancel-reply">×</button>
-            </div>
+            ))
+          ) : (
+            <p>No connection requests found.</p>
           )}
-
-          <form onSubmit={handleSendMessage} className="message-input-form">
-            <button type="button" onClick={() => setIsEmojiPickerOpen(!isEmojiPickerOpen)} className="icon-btn">
-              <Smile />
-            </button>
-            <button type="button" className="icon-btn">
-              <Paperclip />
-            </button>
-            <input
-              type="text"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              placeholder="Type a message..."
-              className="message-input"
-            />
-            <button type="submit" className="send-btn">
-              <Send />
-            </button>
-          </form>
-        </div>
-      ) : (
-        <div className="chat-empty">
-          <p>Select a contact to start chatting</p>
         </div>
       )}
+
+      {/* Placeholder for other sections */}
+      {activeSection === "friends" && (
+        <div className="friends-section">
+          <h2>Your Friends</h2>
+          {friends.length > 0 ? (
+            friends.map((friend, index) => (
+              <div key={index} className="friend-item">
+                <img
+                  src={friend.profilePhotoUrl || "https://via.placeholder.com/150"}
+                  alt={friend.name || "Unknown User"}
+                  className="avatar"
+                />
+                <div>
+                  <h3>{friend.name || friend.email}</h3>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p>No friends found.</p>
+          )}
+        </div>
+      )}
+      {activeSection === "chat" && <div className="chat-section"><h2>Your Chats</h2></div>}
     </div>
   );
 }

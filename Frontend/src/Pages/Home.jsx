@@ -64,14 +64,17 @@ function Home() {
   const getConnectionStatus = (postEmail) => {
     const connection = connections.find(
       (conn) =>
-        (conn.email_user1 === userEmail && conn.email_user2 === postEmail) ||
-        (conn.email_user1 === postEmail && conn.email_user2 === userEmail)
+        (conn.email_user1.email === userEmail && conn.email_user2.email === postEmail) ||
+        (conn.email_user1.email === postEmail && conn.email_user2.email === userEmail)
     );
 
-    if (!connection) return 'none'; // No connection exists
-    if (connection.status === 'pending') return 'sent'; // Connection request sent
-    if (connection.status === 'connected') return 'connected'; // Connection accepted
-    return 'none';
+    if (!connection) return "none"; // No connection exists
+    if (connection.status === "pending") {
+      if (connection.email_user1.email === userEmail) return "sent"; // Connection request sent by logged-in user
+      if (connection.email_user2.email === userEmail) return "received"; // Connection request received by logged-in user
+    }
+    if (connection.status === "connected") return "connected"; // Connection accepted
+    return "none";
   };
 
   // Handle Connect Button Click
@@ -165,22 +168,29 @@ function Home() {
                         </span>
                       ))}
                     </div>
-                    {getConnectionStatus(post.email) === 'none' && (
-                      <button
-                        className="connect-button"
-                        onClick={(e) => {
-                          e.preventDefault(); // Prevent navigation when clicking "Connect"
-                          handleConnect(post.email);
-                        }}
-                      >
-                        Connect
-                      </button>
-                    )}
-                    {getConnectionStatus(post.email) === 'sent' && (
-                      <button className="connect-button" disabled>
-                        Sent
-                      </button>
-                    )}
+                    <div className="buttons">
+                      {getConnectionStatus(post.email) === 'none' && (
+                        <button
+                          className="connect-button"
+                          onClick={(e) => {
+                            e.preventDefault(); // Prevent navigation when clicking "Connect"
+                            handleConnect(post.email);
+                          }}
+                        >
+                          Connect
+                        </button>
+                      )}
+                      {getConnectionStatus(post.email) === 'sent' && (
+                        <button className="connect-button" disabled>
+                          Sent
+                        </button>
+                      )}
+                      {getConnectionStatus(post.email) === 'received' && (
+                        <button className="connect-button" disabled>
+                          Received
+                        </button>
+                      )}
+                    </div>
                   </Link>
                 ))}
             </div>
